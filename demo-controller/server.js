@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = 'cors';
+const cors = require('cors');
 const vault = require('node-vault')({
     apiVersion: 'v1',
     endpoint: process.env.VAULT_ADDR || 'http://127.0.0.1:8200',

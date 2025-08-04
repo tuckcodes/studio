@@ -3,10 +3,24 @@ services:
   web:
     build: .
     ports:
-      - "3000:3000"
+      - "8080:3000"
     environment:
       - NODE_ENV=development
   demo-controller:
     build: ./demo-controller
     ports:
-      - "8080:8080"
+      - "8081:8080"
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=root
+    depends_on:
+      - vault
+  vault:
+    image: hashicorp/vault:latest
+    ports:
+      - "8200:8200"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_UI=true
+    cap_add:
+      - IPC_LOCK
