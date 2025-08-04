@@ -1,65 +1,95 @@
-'use client';
+"use client";
 
-import { Shield, Truck } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { VaultStatus } from './dashboard';
+import Image from "next/image";
+import { AlertTriangle, HardDrive, Wifi, Shield, Server, Smartphone, Laptop } from "lucide-react";
 
-interface VehicleProps {
-  id: string;
-  position: { top: string; left: string };
-}
+// Define the positions for the nodes on the map
+const nodePositions = {
+  commandPost: { top: "10%", left: "50%" },
+  stryker1: { top: "35%", left: "30%" },
+  stryker2: { top: "40%", left: "65%" },
+  stryker3: { top: "60%", left: "45%" },
+  device1: { top: "30%", left: "20%" },
+  device2: { top: "45%", left: "25%" },
+  device3: { top: "38%", left: "78%" },
+  device4: { top: "55%", left: "75%" },
+  device5: { top: "68%", left: "55%" },
+  device6: { top: "75%", left: "40%" },
+};
 
-const Vehicle = ({ id, position }: VehicleProps) => (
+const Node = ({ icon, label, position, isCompromised = false }) => (
   <div
-    className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group"
+    className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center"
     style={{ top: position.top, left: position.left }}
   >
-    <div className="w-12 h-12 rounded-full flex items-center justify-center bg-secondary/80 border-2 border-muted-foreground/50 shadow-lg backdrop-blur-sm transition-all duration-300 group-hover:scale-110">
-      <Truck className="w-6 h-6 text-foreground" />
+    <div className={`relative p-2 bg-black/50 backdrop-blur-sm rounded-full border-2 ${isCompromised ? "border-red-500" : "border-cyan-400"}`}>
+      {icon}
+      {isCompromised && (
+        <div className="absolute -top-2 -right-2">
+          <AlertTriangle className="h-5 w-5 text-red-500 fill-yellow-400" />
+        </div>
+      )}
     </div>
-    <span className="mt-2 text-xs font-bold text-white bg-black/50 px-2 py-1 rounded">{id}</span>
+    <span className="mt-1 text-xs text-white bg-black/50 px-2 py-1 rounded">{label}</span>
   </div>
 );
 
-const VaultServerIcon = ({ status }: { status: VaultStatus }) => {
-  const isSealed = status === 'sealed';
-  const isUnsealed = status === 'unsealed';
-  const isUnknown = status === 'unknown' || status === 'error';
-
+const ConnectionLine = ({ from, to, isCompromised = false }) => {
   return (
-    <div
-      className="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center group"
-      style={{ top: '50%', left: '50%' }}
-    >
-      <div
-        className={cn(
-          'relative w-16 h-16 rounded-full flex items-center justify-center font-bold text-white text-lg shadow-lg border-4 transition-all duration-500 backdrop-blur-sm',
-          isUnsealed && 'bg-primary/80 border-blue-400',
-          isSealed && 'bg-destructive/80 border-red-500',
-          isUnknown && 'bg-gray-600/80 border-gray-400 animate-pulse'
-        )}
-      >
-        {isUnsealed && <div className="absolute inset-0 rounded-full animate-pulse" style={{ animationDuration: '2s', boxShadow: '0 0 0 0px hsl(var(--primary))' }}></div>}
-        {isSealed && <div className="absolute inset-0 rounded-full animate-ping opacity-75" style={{ animationDuration: '1.5s', backgroundColor: 'hsl(var(--destructive))' }}></div>}
-        <Shield className="w-8 h-8 z-10" />
+    <svg className="absolute top-0 left-0 w-full h-full" style={{ pointerEvents: 'none' }}>
+      <line
+        x1={from.left}
+        y1={from.top}
+        x2={to.left}
+        y2={to.top}
+        className={`${isCompromised ? "stroke-red-500" : "stroke-cyan-400"}`}
+        strokeWidth="1"
+        strokeDasharray="5, 5"
+      />
+    </svg>
+  );
+};
+
+
+export function MapDisplay() {
+  return (
+    <div className="relative w-full h-full">
+      <Image
+        src="/background/1.jpg"
+        alt="Battle Map"
+        layout="fill"
+        objectFit="cover"
+        className="z-0"
+      />
+      <div className="relative z-10 w-full h-full">
+         {/* Connections */}
+         <ConnectionLine from={{top: "10%", left: "50%"}} to={{top: "35%", left: "30%"}} />
+         <ConnectionLine from={{top: "10%", left: "50%"}} to={{top: "40%", left: "65%"}} />
+         <ConnectionLine from={{top: "10%", left: "50%"}} to={{top: "60%", left: "45%"}} />
+
+         <ConnectionLine from={{top: "35%", left: "30%"}} to={{top: "30%", left: "20%"}} />
+         <ConnectionLine from={{top: "35%", left: "30%"}} to={{top: "45%", left: "25%"}} />
+
+         <ConnectionLine from={{top: "40%", left: "65%"}} to={{top: "38%", left: "78%"}} />
+         <ConnectionLine from={{top: "40%", left: "65%"}} to={{top: "55%", left: "75%"}} />
+         
+         <ConnectionLine from={{top: "60%", left: "45%"}} to={{top: "68%", left: "55%"}} />
+         <ConnectionLine from={{top: "60%", left: "45%"}} to={{top: "75%", left: "40%"}} />
+
+
+        {/* Nodes */}
+        <Node icon={<Server className="h-8 w-8 text-cyan-300" />} label="Vault Server" position={nodePositions.commandPost} />
+        <Node icon={<HardDrive className="h-8 w-8 text-green-400" />} label="Stryker 1" position={nodePositions.stryker1} />
+        <Node icon={<HardDrive className="h-8 w-8 text-green-400" />} label="Stryker 2" position={nodePositions.stryker2} />
+        <Node icon={<HardDrive className="h-8 w-8 text-green-400" />} label="Stryker 3" position={nodePositions.stryker3} />
+        
+        <Node icon={<Smartphone className="h-5 w-5 text-blue-300" />} label="MANPACK" position={nodePositions.device1} />
+        <Node icon={<Laptop className="h-5 w-5 text-blue-300" />} label="LAPTOP" position={nodePositions.device2} />
+        <Node icon={<Smartphone className="h-5 w-5 text-blue-300" />} label="MANPACK" position={nodePositions.device3} />
+        <Node icon={<Laptop className="h-5 w-5 text-blue-300" />} label="LAPTOP" position={nodePositions.device4} />
+        <Node icon={<Smartphone className="h-5 w-5 text-blue-300" />} label="MANPACK" position={nodePositions.device5} />
+        <Node icon={<Laptop className="h-5 w-5 text-blue-300" />} label="LAPTOP" position={nodePositions.device6} />
       </div>
-      <span className="mt-3 text-sm font-bold text-white bg-black/50 px-2.5 py-1 rounded">VAULT HQ</span>
     </div>
   );
-};
-
-export const MapDisplay = ({ vaultStatus }: { vaultStatus: VaultStatus }) => {
-  const vehicles: VehicleProps[] = [
-    { id: 'Stryker-1', position: { top: '35%', left: '30%' } },
-    { id: 'Stryker-2', position: { top: '35%', left: '70%' } },
-    { id: 'Stryker-3', position: { top: '75%', left: '50%' } },
-  ];
-
-  return (
-    <div className="w-full h-full rounded-lg border border-border shadow-inner overflow-hidden relative bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1568623229237-072211de2cb2?q=80&w=2070&auto=format&fit=crop')" }}>
-        <div className="absolute inset-0 bg-black/40"></div>
-        <VaultServerIcon status={vaultStatus} />
-        {vehicles.map(vehicle => <Vehicle key={vehicle.id} {...vehicle} />)}
-    </div>
-  );
-};
+}
