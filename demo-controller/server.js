@@ -20,8 +20,7 @@ const state = {
 
 const setupVault = async () => {
     try {
-        await vault.login();
-        console.log("Logged into Vault");
+        console.log("Vault client initialized. Proceeding with setup.");
 
         await vault.mount({
             mount_point: 'secret',
