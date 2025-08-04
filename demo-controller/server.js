@@ -1,6 +1,6 @@
 const express = require('express');
 const { exec } = require('child_process');
-const cors = require('cors');
+const cors = 'cors';
 const { Docker } = require('node-docker-api');
 
 const app = express();
@@ -91,6 +91,63 @@ app.post('/api/scenario/start', async (req, res) => {
     res.json({ message: "Scenario started." });
 });
 
+app.post('/api/secret/request', async (req, res) => {
+    const { node } = req.body;
+    try {
+        const command = `docker exec vault-tactical-edge-demo-vault-server-1 vault token create -policy=mission-plan-readonly -ttl=120s -format=json`;
+        const output = await runCommand(command);
+        const tokenData = JSON.parse(output);
+        
+        state.leases[node] = {
+            lease_id: tokenData.auth.lease_id,
+            token: tokenData.auth.client_token,
+        };
+
+        console.log(`Lease created for ${node}: ${tokenData.auth.lease_id}`);
+        res.json({ 
+            message: "Token created", 
+            token: tokenData.auth.client_token, 
+            lease_duration: tokenData.auth.lease_duration 
+        });
+    } catch (e) {
+        res.status(500).json({ message: "Failed to create token" });
+    }
+});
+
+app.post('/api/secret/revoke', async (req, res) => {
+    const { node } = req.body;
+    const lease = state.leases[node];
+    if (!lease) {
+        return res.status(404).json({ message: "No lease found for node" });
+    }
+
+    try {
+        const command = `docker exec vault-tactical-edge-demo-vault-server-1 vault token revoke ${lease.token}`;
+        await runCommand(command);
+        
+        delete state.leases[node];
+
+        console.log(`Lease revoked for ${node}`);
+        res.json({ message: "Token revoked" });
+    } catch (e) {
+        res.status(500).json({ message: "Failed to revoke token" });
+    }
+});
+
+app.post('/api/secret/read', async (req, res) => {
+    const { token } = req.body;
+    if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+    }
+
+    try {
+        const command = `docker exec vault-tactical-edge-demo-vault-server-1 sh -c "VAULT_TOKEN=${token} vault kv get secret/mission-plan"`;
+        const output = await runCommand(command);
+        res.json({ message: "Access granted", data: output });
+    } catch (e) {
+        res.status(403).json({ message: "Access denied" });
+    }
+});
 
 app.post('/api/scenario/compromise', async (req, res) => {
     if (!state.scenarioRunning) {
